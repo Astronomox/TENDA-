@@ -120,10 +120,6 @@ export default function LandingPage() {
           <LiveBackground />
           <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-10 items-center">
             <motion.div variants={stagger} initial="hidden" animate="visible">
-              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FFD4B3] shadow-[0_2px_12px_rgba(232,93,4,0.08)] mb-5">
-                <Sparkles className="w-3.5 h-3.5 text-[#E85D04]" />
-                <span className="text-xs font-semibold text-[#E85D04] tracking-wide">Customer intelligence for Nigerian businesses</span>
-              </motion.div>
               <motion.h1 variants={fadeUp} className="font-display font-extrabold text-[38px] leading-[1.05] sm:text-5xl lg:text-[60px] lg:leading-[1.02] text-[#1A1A1A] mb-5 tracking-tight">
                 Turn one-time buyers into <span className="text-[#E85D04]">loyal customers</span>
               </motion.h1>
@@ -199,8 +195,7 @@ export default function LandingPage() {
           <LiveBackground />
           <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-8">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center max-w-2xl mx-auto mb-10">
-              <p className="text-xs font-semibold text-[#E85D04] uppercase tracking-widest mb-2">What you get</p>
-              <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] leading-[1.08] mb-3 tracking-tight">Everything you need to keep customers coming back</h2>
+                <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] leading-[1.08] mb-3 tracking-tight">Everything you need to keep customers coming back</h2>
               <p className="text-[#6B6B6B] text-base leading-relaxed">No spreadsheets. No analysts. Just clear answers about who matters and what to do next.</p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -241,8 +236,7 @@ export default function LandingPage() {
           <LiveBackground />
           <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-8">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center max-w-2xl mx-auto mb-10">
-              <p className="text-xs font-semibold text-[#E85D04] uppercase tracking-widest mb-2">Dead simple</p>
-              <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] tracking-tight">Running in 5 minutes</h2>
+                <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] tracking-tight">Running in 5 minutes</h2>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {[
@@ -285,8 +279,7 @@ export default function LandingPage() {
           <LiveBackground />
           <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-8">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center max-w-2xl mx-auto mb-10">
-              <p className="text-xs font-semibold text-[#E85D04] uppercase tracking-widest mb-2">Real merchants</p>
-              <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] tracking-tight">Stories from the market</h2>
+                <h2 className="font-display font-extrabold text-3xl lg:text-[44px] text-[#1A1A1A] tracking-tight">Stories from the market</h2>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {[
