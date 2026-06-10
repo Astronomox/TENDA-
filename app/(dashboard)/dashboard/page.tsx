@@ -1,3 +1,4 @@
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Link from "next/link";
 import { getSales } from "@/lib/data/sales";
 import { getCustomers } from "@/lib/data/customers";
@@ -8,8 +9,9 @@ import {
 export default async function Dashboard() {
   const sales = await getSales();
   const customers = await getCustomers();
-  const user = { user_metadata: { full_name: "Toluwani Arogundade" } };
-  const userName = user.user_metadata.full_name;
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Merchant";
   const today = new Date().toLocaleDateString("en-NG", {
     weekday: "short", day: "numeric", month: "short",
   });

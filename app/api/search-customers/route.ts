@@ -1,23 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") || "";
 
-  if (!q) return NextResponse.json([]);
+  if (!q || q.length < 1) return NextResponse.json([]);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  // Sanitize: strip regex special chars, limit length
+  const safe = q.replace(/[%_\\]/g, "").slice(0, 50);
 
-  const { data, error } = await supabase
-    .from("Customers")
-    .select("id, name")
-    .ilike("name", `${q}%`)
-    .limit(5);
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  if (error) return NextResponse.json([]);
+    // Verify session - only authenticated users can search
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json([], { status: 401 });
+    }
 
-  return NextResponse.json(data);
+    const { data, error } = await supabase
+      .from("Customers")
+      .select("id, name")
+      .ilike("name", `${safe}%`)
+      .limit(5);
+
+    if (error) return NextResponse.json([]);
+
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json([]);
+  }
 }

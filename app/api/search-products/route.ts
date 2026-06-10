@@ -1,37 +1,33 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
+export async function GET(req: NextRequest) {
+  const q = req.nextUrl.searchParams.get("q") || "";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // server-only key
-);
+  if (!q || q.length < 1) return NextResponse.json([]);
 
+  // Sanitize: strip regex special chars, limit length
+  const safe = q.replace(/[%_\\]/g, "").slice(0, 50);
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.get("q");
+  try {
+    const supabase = await createSupabaseServerClient();
 
+    // Verify session - only authenticated users can search
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json([], { status: 401 });
+    }
 
-  if (!query || query.length < 1) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, product_name, price")
+      .ilike("product_name", `%${safe}%`)
+      .limit(5);
+
+    if (error) return NextResponse.json([]);
+
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json([]);
   }
-
-
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, product_name, price")
-    .ilike("product_name", `%${query}%`)
-    .limit(5);
-
-
-  if (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
-  }
-
-
-  return NextResponse.json(data);
 }
