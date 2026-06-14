@@ -3,11 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Home, Users, Clock, Settings, Plus } from "lucide-react";
+import { Bell, Home, Users, Clock, Settings, Plus, Bot, Mic, Sparkles } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/customers", label: "Customers", icon: Users },
+  { href: "/ai-assistant", label: "AI Chat", icon: Bot },
+  { href: "/voice-assistant", label: "Voice", icon: Mic },
+  { href: "/insights", label: "Insights", icon: Sparkles },
   { href: "/follow-up", label: "Follow-ups", icon: Clock },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -81,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ===== MOBILE BOTTOM NAV (below lg) ===== */}
       <footer className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[480px] bg-white border-t border-[#E8E8E4]">
         <div className="flex justify-around items-center h-16">
-          {NAV.map((item) => {
+          {NAV.filter(n => ["/dashboard","/customers","/ai-assistant","/voice-assistant","/insights"].includes(n.href)).map((item) => {
             const active = isActive(item.href);
             return (
               <Link
