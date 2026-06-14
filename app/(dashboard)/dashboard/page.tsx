@@ -16,6 +16,7 @@ export default async function Dashboard() {
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Merchant";
   const today = new Date().toLocaleDateString("en-NG", {
     weekday: "short", day: "numeric", month: "short",
+    timeZone: "Africa/Lagos",
   });
   const now = new Date();
   const currentMonth = now.getMonth();
