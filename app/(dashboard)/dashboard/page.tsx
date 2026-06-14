@@ -1,3 +1,5 @@
+export const revalidate = 0;
+
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Link from "next/link";
 import { getSales } from "@/lib/data/sales";
