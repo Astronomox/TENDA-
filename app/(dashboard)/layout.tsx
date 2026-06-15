@@ -3,7 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Home, Users, Clock, Settings, Plus, Bot, Mic, Sparkles } from "lucide-react";
+import { Home, Users, Clock, Settings, Plus, Bot, Mic, Sparkles } from "lucide-react";
+import NotificationPanel from "@/components/NotificationPanel";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -60,20 +61,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ===== MOBILE HEADER (below lg) ===== */}
       <header className="lg:hidden fixed top-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[480px] h-16 bg-white/95 backdrop-blur-md border-b border-[#E8E8E4] flex items-center justify-between px-4">
         <span className="font-display font-extrabold text-2xl">TENDA</span>
-        <button className="p-2 -mr-2 text-[#4A5568] hover:text-[#1A1A1A] relative transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#E85D04] border-2 border-white" />
-        </button>
+        <NotificationPanel />
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 lg:pl-64">
         {/* Desktop top bar */}
         <div className="hidden lg:flex h-20 items-center justify-end px-8 border-b border-[#E8E8E4] bg-white/80 backdrop-blur-md sticky top-0 z-30">
-          <button className="p-2 text-[#4A5568] hover:text-[#1A1A1A] relative transition-colors">
-            <Bell className="w-6 h-6" />
-            <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#E85D04] border-2 border-white" />
-          </button>
+          <NotificationPanel />
         </div>
 
         <main className="pt-16 pb-24 w-full max-w-[480px] mx-auto lg:max-w-6xl lg:pt-8 lg:px-8 lg:pb-12">
