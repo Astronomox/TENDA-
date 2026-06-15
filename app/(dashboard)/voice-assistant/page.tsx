@@ -1,87 +1,24 @@
 "use client";
 
 /**
- * app/voice/page.tsx
+ * app/(dashboard)/voice-assistant/page.tsx
  *
- * ── Layout Integration ────────────────────────────────────────────────────────
- * Parent: DashboardLayout (layout.tsx)
- *
- * layout.tsx provides:
- *   Mobile  → max-w-[480px] mx-auto  |  pt-16 pb-24
- *   Desktop → max-w-6xl              |  pt-8 px-8 pb-12  |  flex-1 beside w-64 nav
- *
- * Integration strategy (SAME AS Insights page — standard scrollable dashboard):
- *   • Does NOT escape layout.tsx padding — this page scrolls naturally.
- *   • Adds only `px-4 lg:px-0` for inner mobile gutter.
- *   • On desktop: uses a two-column CSS grid (main area + session history sidebar)
- *     that works inside max-w-6xl.
- *   • On mobile: single column, session history appears below main content.
- *
- * Voice orb + controls do NOT use fixed positioning — they scroll with the page,
- * keeping the layout contract with layout.tsx's fixed mobile chrome intact.
+ * Wired to POST /voice/ask on the Tenda FastAPI backend.
+ * Records audio via the browser MediaRecorder API, sends the blob,
+ * and displays the AI text answer in the transcript.
+ * The demo state-cycle animation is kept for the orb/waveform visuals.
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import VoiceHero from "./components/VoiceHero";
 import VoiceTranscript, { TranscriptEntry } from "./components/VoiceTranscript";
 import QuickCommandGrid from "./components/QuickCommandGrid";
 import VoiceSummaryCard, { VoiceSummary } from "./components/VoiceSummaryCard";
 import VoiceSessionHistory, { VoiceSession } from "./components/VoiceSessionHistory";
 import { VoiceState } from "./components/VoiceStateIndicator";
+import { voiceAsk } from "@/lib/apiClient";
 
-// ─── Seed data ────────────────────────────────────────────────────────────────
-const SEED_TRANSCRIPT: TranscriptEntry[] = [
-  {
-    id: "t1",
-    role: "user",
-    text: "Analyze my sales performance this month.",
-    time: "10:41 AM",
-  },
-  {
-    id: "t2",
-    role: "assistant",
-    text: "Your revenue this month is ₦450,000, which is up 12% compared to last month. Friday is your strongest day, contributing about 18% of weekly revenue. Your top category is Food & Beverage, which drives the most repeat purchases.",
-    time: "10:41 AM",
-  },
-  {
-    id: "t3",
-    role: "user",
-    text: "Which customers should I focus on this week?",
-    time: "10:42 AM",
-  },
-  {
-    id: "t4",
-    role: "assistant",
-    text: "I'd prioritize 47 customers who haven't purchased in 14 or more days. They represent about ₦58,000 in at-risk revenue. Reaching out now with a personalised offer could recover 30 to 40 percent of them based on historical patterns.",
-    time: "10:42 AM",
-  },
-];
-
-const SEED_SUMMARY: VoiceSummary = {
-  summary:
-    "This voice session focused on monthly sales performance and customer retention strategy. Revenue is trending positively at +12%, with key opportunities in re-engaging at-risk customers and optimising Friday sales windows.",
-  takeaways: [
-    "Revenue up 12% — driven by Friday traffic and Food & Beverage",
-    "47 customers are at churn risk this week",
-    "Morning hours (7–10 AM) are underutilised despite high activity",
-  ],
-  tasks: [
-    "Send re-engagement message to 47 at-risk customers",
-    "Plan a Friday evening flash sale promotion",
-    "Review Electronics category decline with team",
-  ],
-  recommendations: [
-    "Introduce a morning loyalty incentive to shift purchase timing",
-    "Bundle Electronics with Food & Beverage to reverse slump",
-    "Increase WhatsApp outreach frequency for top 20 customers",
-  ],
-  nextActions: [
-    "Go to Follow-ups → create outreach campaign",
-    "Review AI Insights page for detailed revenue breakdown",
-    "Export this summary to share with team",
-  ],
-};
-
+// ─── Seed session history ─────────────────────────────────────────────────────
 const SEED_SESSIONS: VoiceSession[] = [
   {
     id: "s1",
@@ -130,14 +67,6 @@ const SEED_SESSIONS: VoiceSession[] = [
   },
 ];
 
-// ─── State machine helpers ────────────────────────────────────────────────────
-// Simulates a voice session state cycle for demo purposes
-function nextState(current: VoiceState): VoiceState {
-  const cycle: VoiceState[] = ["listening", "processing", "speaking", "listening"];
-  const idx = cycle.indexOf(current);
-  return idx === -1 ? "listening" : cycle[(idx + 1) % cycle.length];
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function VoiceAssistantPage() {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
@@ -147,66 +76,134 @@ export default function VoiceAssistantPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [sessions, setSessions] = useState<VoiceSession[]>(SEED_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>("s1");
-  const [stateTimer, setStateTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Start session — cycles through voice states to demo animation
-  const handleStart = useCallback(() => {
-    setIsActive(true);
-    setVoiceState("listening");
+  // MediaRecorder refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const addTranscriptEntry = (entry: TranscriptEntry) =>
+    setTranscript((prev) => [...prev, entry]);
+
+  // ── Start: open mic and begin recording ──────────────────────────────────
+  const handleStart = useCallback(async () => {
+    setError(null);
     setTranscript([]);
     setShowSummary(false);
 
-    // Cycle states for demo
-    let current: VoiceState = "listening";
-    let msgIdx = 0;
-    const timer = setInterval(() => {
-      current = nextState(current);
-      setVoiceState(current);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-      // Inject transcript messages as state cycles
-      if (current === "speaking" && msgIdx < SEED_TRANSCRIPT.length) {
-        const msg = SEED_TRANSCRIPT[msgIdx];
-        const userMsg = SEED_TRANSCRIPT[msgIdx > 0 ? msgIdx - 1 : 0];
-        setTranscript((prev) => {
-          const already = prev.find((e) => e.id === msg.id);
-          if (already) return prev;
-          // Add user message just before AI speaks
-          const withUser =
-            msgIdx > 0 && !prev.find((e) => e.id === userMsg.id)
-              ? [...prev, userMsg]
-              : prev;
-          return [...withUser, msg];
-        });
-        msgIdx += 2;
-      }
-    }, 2200);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
 
-    setStateTimer(timer);
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsActive(true);
+      setVoiceState("listening");
+    } catch {
+      setError("Microphone access denied. Please allow microphone access and try again.");
+    }
   }, []);
 
-  // Stop session
-  const handleStop = useCallback(() => {
-    if (stateTimer) clearInterval(stateTimer);
-    setIsActive(false);
-    setVoiceState("idle");
-    setTranscript(SEED_TRANSCRIPT);
-    setShowSummary(true);
-  }, [stateTimer]);
+  // ── Stop: send audio to backend, display answer ──────────────────────────
+  const handleStop = useCallback(async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
 
-  // Quick command — inject as user message and trigger session
-  const handleQuickCommand = useCallback(
-    (prompt: string) => {
-      if (!isActive) {
-        handleStart();
-        setTimeout(() => {
-          setTranscript([
-            { id: `q-${Date.now()}`, role: "user", text: prompt, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
-          ]);
-        }, 400);
-      }
-    },
-    [isActive, handleStart]
-  );
+    setVoiceState("processing");
+
+    // Wrap recorder.stop() in a promise so we wait for all data
+    await new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve();
+      recorder.stop();
+      // Stop all tracks to release mic
+      recorder.stream.getTracks().forEach((t) => t.stop());
+    });
+
+    setIsActive(false);
+
+    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+    // Add a placeholder user entry while we wait
+    const userEntry: TranscriptEntry = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      text: "Voice message sent…",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    addTranscriptEntry(userEntry);
+
+    try {
+      setVoiceState("speaking");
+      const res = await voiceAsk(audioBlob);
+
+      const aiEntry: TranscriptEntry = {
+        id: `ai-${Date.now()}`,
+        role: "assistant",
+        text: res.answer,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      addTranscriptEntry(aiEntry);
+      setShowSummary(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Voice processing failed";
+      setError(msg);
+    } finally {
+      setVoiceState("idle");
+    }
+  }, []);
+
+  // ── Quick command: use text-based AI chat instead of audio ───────────────
+  const handleQuickCommand = useCallback(async (prompt: string) => {
+    setError(null);
+    setTranscript([]);
+    setShowSummary(false);
+
+    const userEntry: TranscriptEntry = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      text: prompt,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    addTranscriptEntry(userEntry);
+    setVoiceState("processing");
+
+    try {
+      // Quick commands use the text AI endpoint (no audio needed)
+      const { aiChat } = await import("@/lib/apiClient");
+      const res = await aiChat(prompt, []);
+
+      const aiEntry: TranscriptEntry = {
+        id: `ai-${Date.now()}`,
+        role: "assistant",
+        text: res.answer,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      addTranscriptEntry(aiEntry);
+      setShowSummary(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+    } finally {
+      setVoiceState("idle");
+    }
+  }, []);
+
+  // Build a summary from the last transcript pair
+  const liveSummary: VoiceSummary | null =
+    showSummary && transcript.length >= 2
+      ? {
+          summary: transcript.find((e) => e.role === "assistant")?.text ?? "",
+          takeaways: [],
+          tasks: [],
+          recommendations: [],
+          nextActions: ["Review AI Insights page for detailed breakdown"],
+        }
+      : null;
 
   const handleDeleteSession = useCallback((id: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -214,18 +211,10 @@ export default function VoiceAssistantPage() {
 
   return (
     <div className="px-4 lg:px-0">
-      {/*
-        Desktop layout: two columns
-          Left (flex-1): orb + transcript + commands + summary
-          Right (w-80):  session history (sticky)
-
-        Mobile: single column, history at bottom
-      */}
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:items-start">
 
-        {/* ── LEFT / MAIN COLUMN ────────────────────────────── */}
+        {/* ── LEFT / MAIN COLUMN ──────────────────────────────────────────── */}
         <div>
-          {/* Voice hero (orb, controls, waveform) */}
           <VoiceHero
             state={voiceState}
             isActive={isActive}
@@ -235,32 +224,33 @@ export default function VoiceAssistantPage() {
             onMute={() => setIsMuted((v) => !v)}
           />
 
-          {/* Divider */}
           <div className="border-t border-[#F0F0EC] mb-6" />
 
-          {/* AI-generated session summary (shown after session ends) */}
-          {showSummary && (
+          {error && (
+            <div className="mb-4 text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          {liveSummary && (
             <VoiceSummaryCard
-              summary={SEED_SUMMARY}
-              sessionDate="Today, 10:45 AM"
+              summary={liveSummary}
+              sessionDate={new Date().toLocaleString([], {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
             />
           )}
 
-          {/* Live transcript */}
           <VoiceTranscript
             entries={transcript}
             isListening={voiceState === "listening"}
           />
 
-          {/* Quick commands */}
-          <QuickCommandGrid
-            onSelect={handleQuickCommand}
-            disabled={false}
-          />
+          <QuickCommandGrid onSelect={handleQuickCommand} disabled={isActive} />
         </div>
 
-        {/* ── RIGHT / SESSION HISTORY COLUMN (desktop) ──────── */}
-        {/* On mobile this renders naturally below the main column */}
+        {/* ── RIGHT / SESSION HISTORY COLUMN ──────────────────────────────── */}
         <div className="lg:sticky lg:top-4">
           <VoiceSessionHistory
             sessions={sessions}

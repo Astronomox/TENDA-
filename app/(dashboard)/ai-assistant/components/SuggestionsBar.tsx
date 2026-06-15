@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
+import { Users, TrendingDown, RefreshCw, DollarSign, AlertTriangle, BarChart2 } from "lucide-react";
 
 const SUGGESTIONS = [
-  { icon: "👥", label: "Best customers this month" },
-  { icon: "📉", label: "Inactive customers (2+ weeks)" },
-  { icon: "🔁", label: "Top repeat-purchase products" },
-  { icon: "💰", label: "Revenue trend this week" },
-  { icon: "⚠️", label: "Declining categories" },
-  { icon: "📊", label: "Retention insights" },
+  { icon: Users,         label: "Best customers this month" },
+  { icon: TrendingDown,  label: "Inactive customers (2+ weeks)" },
+  { icon: RefreshCw,     label: "Top repeat-purchase products" },
+  { icon: DollarSign,    label: "Revenue trend this week" },
+  { icon: AlertTriangle, label: "Declining categories" },
+  { icon: BarChart2,     label: "Retention insights" },
 ];
 
 interface SuggestionsBarProps {
@@ -17,7 +18,6 @@ interface SuggestionsBarProps {
 
 export default function SuggestionsBar({ onSelect }: SuggestionsBarProps) {
   return (
-    // Horizontally scrollable — no wrapping, no height bloat
     <div className="px-4 py-2 bg-white border-t border-[#E8E8E4]">
       <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
         {SUGGESTIONS.map((s, i) => (
@@ -33,7 +33,7 @@ export default function SuggestionsBar({ onSelect }: SuggestionsBarProps) {
               transition-all whitespace-nowrap
             "
           >
-            <span>{s.icon}</span>
+            <s.icon className="w-3.5 h-3.5 flex-shrink-0" />
             {s.label}
           </button>
         ))}

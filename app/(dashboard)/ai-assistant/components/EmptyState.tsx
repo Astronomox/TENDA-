@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
+import { Users, TrendingDown, RefreshCw, DollarSign, AlertTriangle, BarChart2 } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
-  { icon: "👥", label: "Who are my best customers this month?" },
-  { icon: "📉", label: "Which customers haven't returned in 2+ weeks?" },
-  { icon: "🔁", label: "What products drive the most repeat purchases?" },
-  { icon: "💰", label: "Summarise my revenue trend for this week" },
-  { icon: "⚠️", label: "Which sales categories are declining?" },
-  { icon: "📊", label: "Show me customer retention insights" },
+  { icon: Users,         label: "Who are my best customers this month?" },
+  { icon: TrendingDown,  label: "Which customers haven't returned in 2+ weeks?" },
+  { icon: RefreshCw,     label: "What products drive the most repeat purchases?" },
+  { icon: DollarSign,    label: "Summarise my revenue trend for this week" },
+  { icon: AlertTriangle, label: "Which sales categories are declining?" },
+  { icon: BarChart2,     label: "Show me customer retention insights" },
 ];
 
 interface EmptyStateProps {
@@ -18,7 +19,6 @@ interface EmptyStateProps {
 export default function EmptyState({ onPromptClick }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">
-      {/* Branded icon */}
       <div className="w-16 h-16 rounded-full bg-[#FFF0E6] border-2 border-[#F4C9A4] flex items-center justify-center mb-5 shadow-[0_4px_24px_rgba(232,93,4,0.12)]">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="#E85D04" strokeWidth="2" />
@@ -39,7 +39,6 @@ export default function EmptyState({ onPromptClick }: EmptyStateProps) {
         or retention risks. I&apos;m analyzing your last 30 days of data.
       </p>
 
-      {/* Suggestion grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-xl">
         {EXAMPLE_PROMPTS.map((p, i) => (
           <button
@@ -52,7 +51,7 @@ export default function EmptyState({ onPromptClick }: EmptyStateProps) {
               transition-all group shadow-sm
             "
           >
-            <span className="text-lg flex-shrink-0">{p.icon}</span>
+            <p.icon className="w-4 h-4 flex-shrink-0 text-[#E85D04]" />
             <span className="text-sm text-[#4A5568] group-hover:text-[#E85D04] font-medium leading-snug transition-colors">
               {p.label}
             </span>

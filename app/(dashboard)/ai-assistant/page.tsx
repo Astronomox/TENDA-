@@ -79,7 +79,7 @@ const SEED_MESSAGES: ChatMessage[] = [
       {
         type: "insight",
         content:
-          "💡 Combined, your top 5 customers represent 29% of total monthly revenue.",
+          "Combined, your top 5 customers represent 29% of total monthly revenue.",
       },
     ],
   },
@@ -94,7 +94,7 @@ function generateAIResponse(query: string): ChatMessage["blocks"] {
     },
     {
       type: "insight",
-      content: "💡 This insight is based on your last 30 days of transactions.",
+      content: "This insight is based on your last 30 days of transactions.",
     },
     {
       type: "text",
