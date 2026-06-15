@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ===== MOBILE BOTTOM NAV (below lg) ===== */}
       <footer className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[480px] bg-white border-t border-[#E8E8E4]">
         <div className="flex justify-around items-center h-16">
-          {NAV.filter(n => ["/dashboard","/customers","/ai-assistant","/voice-assistant","/insights"].includes(n.href)).map((item) => {
+          {NAV.map((item) => {
             const active = isActive(item.href);
             return (
               <Link
